@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.starterapp"
-        minSdkVersion 16
+        minSdkVersion 23
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -32,10 +32,13 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    //startapp
-    implementation 'com.startapp:inapp-sdk:3.10.1'
-    //admob
-    implementation 'com.google.android.gms:play-services-ads:19.1.0'
     //Privacy policy
     implementation 'com.github.khirr:Android-Privacy-Policy:1.0.2'
+    //Dexter
+    implementation 'com.karumi:dexter:6.1.0'
+    //Startapp
+    implementation 'com.startapp:inapp-sdk:4.5.0'
+    //Glide
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
 }

@@ -1,59 +1,156 @@
 package com.example.starterapp;
 
+import android.Manifest;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.DexterError;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.PermissionRequestErrorListener;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.startapp.sdk.adsbase.StartAppAd;
+import com.startapp.sdk.adsbase.StartAppSDK;
 
-public class MainActivity extends AppCompatActivity {
 
-    private InterstitialAd interstitialAd;
+import java.util.List;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        //startapp init
-        StartAppSDK.init(this, "203975375", true);
-        //admob init
-        instantiateAdMob();
-        setContentView(R.layout.activity_main);
-    }
 
-    public void instantiateAdMob(){
-        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+
+    public class MainActivity extends AppCompatActivity {
+
+        private EditText mUrlEditText;
+        private String url;
+        private Button mGenerateButton;
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            //init startapp
+            StartAppSDK.init(this, String.valueOf("203975375"), true);
+            StartAppAd.disableSplash();
+            setContentView(R.layout.activity_main);
+            mUrlEditText = findViewById(R.id.urlEditText);
+            mUrlEditText.addTextChangedListener(textWatcher);
+            mGenerateButton = findViewById(R.id.generateButton);
+
+            RequestPermission();
+        }
+
+        private void RequestPermission() {
+            Dexter.withActivity(this)
+                    .withPermissions(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    .withListener(new MultiplePermissionsListener() {
+                        @Override
+                        public void onPermissionsChecked(MultiplePermissionsReport report) {
+                            // check if all permissions are granted
+                            if (report.areAllPermissionsGranted()) {
+                                Toast.makeText(getApplicationContext(), "All permissions are granted!", Toast.LENGTH_SHORT).show();
+                            }
+
+                            // check for permanent denial of any permission
+                            if (report.isAnyPermissionPermanentlyDenied()) {
+                                // show alert dialog navigating to Settings
+                                showSettingsDialog();
+                            }
+                        }
+
+                        @Override
+                        public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
+                            token.continuePermissionRequest();
+                        }
+                    }).
+                    withErrorListener(new PermissionRequestErrorListener() {
+                        @Override
+                        public void onError(DexterError error) {
+                            Toast.makeText(getApplicationContext(), "Error occurred! ", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .onSameThread()
+                    .check();
+        }
+
+        /**
+         * Showing Alert Dialog with Settings option
+         * Navigates user to app settings
+         * NOTE: Keep proper title and message depending on your app
+         */
+        private void showSettingsDialog() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Need Permissions");
+            builder.setMessage("This app needs permission to use this feature. You can grant them in app settings.");
+            builder.setPositiveButton("GOTO SETTINGS", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                    OpenSettings();
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            builder.show();
+
+        }
+
+        // navigating user to app settings
+        private void OpenSettings() {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            Uri uri = Uri.fromParts("package", getPackageName(), null);
+            intent.setData(uri);
+            startActivityForResult(intent, 101);
+        }
+
+        public TextWatcher textWatcher = new TextWatcher() {
             @Override
-            public void onInitializationComplete(InitializationStatus initializationStatus) {
-            }
-        });
-        interstitialAd = new InterstitialAd(this);
-        interstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712");
-        interstitialAd.loadAd(new AdRequest.Builder().build());
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-        interstitialAd.setAdListener(new AdListener() {
+            }
+
             @Override
-            public void onAdClosed() {
-                // Load the next interstitial.
-                interstitialAd.loadAd(new AdRequest.Builder().build());
-            }
-        });
-    }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                url = mUrlEditText.getText().toString().trim();
 
-    public void handleAdMob(View view) {
-        if (interstitialAd.isLoaded()) {
-            Intent intent =  new Intent(this, AdActivity.class);
+                if (!url.isEmpty()) {
+                    mGenerateButton.setEnabled(true);
+                } else {
+                    mGenerateButton.setEnabled(false);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        };
+
+        public void handleGenerate(View view) {
+            Intent intent = new Intent(this, ResultActivity.class);
+            intent.putExtra("KEY_URL", url);
             startActivity(intent);
-            interstitialAd.show();
-        } else {
-            Log.d("TAG", "The interstitial wasn't loaded yet.");
+            StartAppAd.showAd(this);
         }
     }
 
-    public void handleStartApp(View view) {
-        Intent intent =  new Intent(this, AdActivity.class);
-        startActivity(intent);
-        StartAppAd.showAd(this);
-    }
 
-}
+

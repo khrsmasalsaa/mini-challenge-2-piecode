@@ -3,9 +3,12 @@ package com.example.starterapp;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import net.khirr.android.privacypolicy.PrivacyPolicyDialog;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -15,7 +18,14 @@ public class SplashActivity extends AppCompatActivity {
         setContentView(R.layout.activity_splash);
 
         //init privacy policy
-        instantiatePrivacyPolicy();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                instantiatePrivacyPolicy();
+            }
+        }, 1000);
+
     }
 
     public void instantiatePrivacyPolicy(){
@@ -49,4 +59,5 @@ public class SplashActivity extends AppCompatActivity {
         dialog.setTitle("Terms of Service");
 
         dialog.show();
+    }
     }
